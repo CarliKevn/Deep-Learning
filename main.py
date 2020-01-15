@@ -3,6 +3,9 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.model_selection import train_test_split
+from statsmodels.regression.linear_model import OLS
+#from statsmodels.stats.outliers_influence import variance_inflation_factor
+from statsmodels.tools.tools import add_constant
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import RandomizedSearchCV
@@ -56,6 +59,59 @@ def plot_arima_predictions(X,Y):
     plt.legend()
     plt.show()
 
+def variance_inflation_factor(exog, exog_idx):
+    """
+    exog : ndarray, (nobs, k_vars)
+        design matrix with all explanatory variables, as for example used in
+        regression
+    exog_idx : int
+        index of the exogenous variable in the columns of exog
+    """
+    k_vars = exog.shape[1]
+    x_i = exog[:, exog_idx]
+    mask = np.arange(k_vars) != exog_idx
+    x_noti = exog[:, mask]
+    r_squared_i = OLS(x_i, x_noti, missing='drop').fit().rsquared
+    vif = 1. / (1. - r_squared_i)
+    return vif
+
+def multicolinearity_check(X, treshold=5.0):
+    variables = list(range(X.shape[1]))
+    dropped = True
+    while dropped:
+        dropped = False
+        vif = [variance_inflation_factor(X.iloc[:, variables].values, ix)
+               for ix in range(X.iloc[:, variables].shape[1])]
+
+        maxloc = vif.index(max(vif))
+        if max(vif) > treshold:
+            print('dropping \'' + X.iloc[:, variables].columns[maxloc] +
+                  '\' at index: ' + str(maxloc))
+            del variables[maxloc]
+            dropped = True
+
+    print('Remaining variables:')
+    print(X.columns[variables])
+    return X.iloc[:, variables]
+
+def fit_arima(dataset):
+    closed_price_train = [x for x in dataset]
+    arima_predictions = list()
+    closed_price_test = [x for x in data_test['Fermeture']]
+    for t in range(len(closed_price_test)):
+        model = ARIMA(closed_price_train, order=(2,1,2))
+        model_fit = model.fit(disp=0)
+        output = model_fit.forecast()
+        yhat = output[0]
+        arima_predictions.append(yhat)
+        #Update known value as we move in time
+        closed_price_train.append(closed_price_test[t])
+
+    error = mean_squared_error(closed_price_test, arima_predictions)
+    print('MSE: %.3f' % error)
+
+    plot_arima_predictions(arima_predictions, closed_price_test)
+
 def get_technical_indicators(dataset):
     TI = pd.DataFrame()
     # Create 7 and 21 days Moving Average
@@ -68,7 +124,7 @@ def get_technical_indicators(dataset):
     TI['MACD'] = (TI['12ema']-TI['26ema'])
 
     # Create Bollinger Bands
-    TI['21sd'] =dataset['Fermeture'].rolling(window=21).std()
+    TI['21sd'] = dataset['Fermeture'].rolling(window=21).std()
     TI['upper_band'] = TI['ma21'] + (TI['21sd']*2)
     TI['lower_band'] = TI['ma21'] - (TI['21sd']*2)
 
@@ -99,33 +155,12 @@ print(y_train.head())
 stationary_closed_price = make_stationary(y_train)
 #
 #closed_price_train = [x for x in stationary_closed_price]
-closed_price_train = [x for x in y_train]
-arima_predictions = list()
-closed_price_test = [x for x in data_test['Fermeture']]
-for t in range(len(closed_price_test)):
-    model = ARIMA(closed_price_train, order=(2,1,2))
-    model_fit = model.fit(disp=0)
-    output = model_fit.forecast()
-    yhat = output[0]
-    arima_predictions.append(yhat)
-    #Update known value as we move in time
-    closed_price_train.append(closed_price_test[t])
-
-error = mean_squared_error(closed_price_test, arima_predictions)
-print('MSE: %.3f' % error)
-
-plot_arima_predictions(arima_predictions, closed_price_test)
-
-#print(data_train.info())
-#print(data_test.head())
 
 
-#plot closed Fermeture
+#fit_arima(y_train)
 
-#plt.figure(figsize=(14, 5), dpi=100)
-#plt.plot(data2['Date'], data2['Fermeture'], label='Bitcoin closed Fermeture')
-#plt.xlabel('Date')
-#plt.ylabel('Fermeture')
-#plt.title('Figure 1: Bitcoin closed Fermeture')
-#plt.legend()
-#plt.show()
+#print(X_train.loc[:, X_train.isna().any()])
+#X_train.Cap = X_train.Cap.astype(np.float64)
+#vif = multicolinearity_check(X_train)
+#print(vif)
+
