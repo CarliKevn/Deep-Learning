@@ -5,19 +5,9 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from statsmodels.regression.linear_model import OLS
 #from statsmodels.stats.outliers_influence import variance_inflation_factor
-from statsmodels.tools.tools import add_constant
-from sklearn.model_selection import StratifiedShuffleSplit
-from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import OneHotEncoder, LabelEncoder, LabelBinarizer
-from sklearn.compose import ColumnTransformer, make_column_transformer
-from sklearn.pipeline import Pipeline
-from sklearn.base import BaseEstimator, TransformerMixin
 import category_encoders as ce
 from statsmodels.graphics.tsaplots import plot_pacf, plot_acf
 from statsmodels.tsa.stattools import adfuller
-from statsmodels.tsa.seasonal import seasonal_decompose
 from statsmodels.tsa.arima_model import ARIMA
 from sklearn.metrics import mean_squared_error
 from pandas.plotting import register_matplotlib_converters
@@ -61,11 +51,8 @@ def plot_arima_predictions(X,Y):
 
 def variance_inflation_factor(exog, exog_idx):
     """
-    exog : ndarray, (nobs, k_vars)
-        design matrix with all explanatory variables, as for example used in
-        regression
-    exog_idx : int
-        index of the exogenous variable in the columns of exog
+    VIF quantifies the severity of multicollinearity in an ordinary least squares regression analysis.
+    Measures how much the variance of an estimated regression coefficient is increased because of collinearity.
     """
     k_vars = exog.shape[1]
     x_i = exog[:, exog_idx]
@@ -136,6 +123,7 @@ def get_technical_indicators(dataset):
 
     return TI
 
+# Import data, replace unwanted coma for float numbers, and convert to numeric number
 data = pd.read_csv("/home/kevin/DeepLearning/bitcoin.csv")
 data.iloc[:, 1:].replace(',','', regex=True, inplace=True)
 data_ordered = data.iloc[::-1]
@@ -144,11 +132,16 @@ data2 = pd.concat([data_ordered.iloc[:,0], data_ordered.iloc[:, 1:].apply(pd.to_
 data_TI = get_technical_indicators(data2)
 data_with_TI = pd.concat([data2, data_TI], axis=1)
 
-#print(data_with_TI.head())
+# Check if evertything is good.
+print(data_with_TI.head())
+
+# Split train/test sets, without shuffle as it is a time serie.
 data_train, data_test = train_test_split(data_with_TI, test_size=0.2, shuffle=False)
+# Feature
 X_train = data_train[['Ouverture', 'Haut', 'Bas', 'Cap', 'ma7', 'ma21', '26ema', '12ema', 'MACD', '21sd', 'upper_band', 'lower_band', 'ema', 'momentum']]
-y_train = data_train["Fermeture"]
 X_test = data_test[['Ouverture', 'Haut', 'Bas', 'Cap', 'ma7', 'ma21', '26ema', '12ema', 'MACD', '21sd', 'upper_band', 'lower_band', 'ema', 'momentum']]
+# Target
+y_train = data_train["Fermeture"]
 y_test = data_test["Fermeture"]
 
 print(y_train.head())
@@ -157,7 +150,7 @@ stationary_closed_price = make_stationary(y_train)
 #closed_price_train = [x for x in stationary_closed_price]
 
 
-#fit_arima(y_train)
+fit_arima(y_train)
 
 #print(X_train.loc[:, X_train.isna().any()])
 #X_train.Cap = X_train.Cap.astype(np.float64)
