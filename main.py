@@ -99,6 +99,46 @@ def fit_arima(dataset):
 
     plot_arima_predictions(arima_predictions, closed_price_test)
 
+def relative_strength_index(closing_price, window_length=14):
+    RSI_TI = pd.DataFrame()
+    #Get the closing price difference between two time steps
+    closing_price_diff = closing_price.diff()
+    # Get rid of the first row, which is NaN since it did not have a previous
+    # row to calculate the differences
+    closing_price_diff = closing_price_diff[1:]
+
+    # Make the positive gains (up) and negative gains (down) Series
+    positive_gain, negative_gain = closing_price_diff.copy(), closing_price_diff.copy()
+    positive_gain[positive_gain < 0] = 0
+    negative_gain[negative_gain > 0] = 0
+
+    # Calculate the EWMA
+    roll_up_ewm = pd.DataFrame.ewm(positive_gain, window_length).mean()
+    roll_down_ewm = pd.DataFrame.ewm(negative_gain.abs(), window_length).mean()
+
+    # Calculate the RSI based on EWMA
+    rs1 = roll_up_ewm / roll_down_ewm
+    rsi_ewm = 100.0 - (100.0 / (1.0 + rs1))
+
+    # Calculate the SMA
+    roll_up_sma = positive_gain.rolling(window=window_length).mean()
+    roll_down_sma = negative_gain.abs().rolling(window=window_length).mean()
+
+    # Calculate the RSI based on SMA
+    rs2 = roll_up_sma / roll_down_sma
+    rsi_sma = 100.0 - (100.0 / (1.0 + rs2))
+
+    # Compare graphically
+    plt.figure()
+    rsi_ewm.plot()
+    rsi_sma.plot()
+    plt.legend(['RSI via EWMA', 'RSI via SMA'])
+    plt.show()
+    RSI_TI['rsi_ewm'] = rsi_ewm
+    RSI_TI['rsi_sma'] = rsi_sma
+
+    return RSI_TI
+
 def get_technical_indicators(dataset):
     TI = pd.DataFrame()
     # Create 7 and 21 days Moving Average
@@ -123,12 +163,51 @@ def get_technical_indicators(dataset):
 
     return TI
 
+def sharpe_ratio_tc(closing_price, position, tc=0.002):
+    # Portfolio vector w (weight of each asset)
+    # u = vector of expected returns
+    # Σ = covariance. Σij the empirical covariance of the ith and the jth assets.
+    # Expected  returns  (wTμ)  and  risk  level  (wTΣw)
+    # Sharpe = maximize wTμ/√wTΣw
+    # For simplicity we have only one asset in our portfolio so we can omit vector w as sum(wi) = 1
+    # And  vector u has only one expected return.
+    # We can omit covariance and take variance instead. (std because we root squared the variance)
+
+    # Calculate the log return: rt+1 = ln(closing_price(t+1) / (closing_price(t)))
+    #log_return = pd.DataFrame()
+    #log_return['log_ret'] = np.log(closing_price / closing_price.shift(1))
+    log_return = np.log(1 + closing_price.pct_change())
+    log_return.fillna(0, inplace=True)
+
+    # Including transaction costs
+    # The transaction cost term is subtracted directly from the expected return since the sharpe ratio is unitless
+    # Transaction costs are applicable only if we have changed our position between two timesteps.
+    # Positions are (-1,0,1) = long, neutral, short
+    position_diff = position.diff()
+    position_diff.fillna(0, inplace=True)
+    t=1
+    log_return_grouped = pd.Series()
+    sharpe_ratio = pd.Series()
+    while t < closing_price.len() - 1:
+        if t = 0:
+            sharpe_ratio.append(0)
+        else
+            log_return_grouped = log_return[t-1:t]
+            s_r = (log_return_grouped.mean() - (tc * abs(position_diff[t]))) / log_return_grouped.std()
+            sharpe_ration.append(s_r)
+            log_return_grouped.drop[:]
+        t = t + 1
+
+
+
+
 # Import data, replace unwanted coma for float numbers, and convert to numeric number
 data = pd.read_csv("/home/kevin/DeepLearning/bitcoin.csv")
 data.iloc[:, 1:].replace(',','', regex=True, inplace=True)
 data_ordered = data.iloc[::-1]
 data2 = pd.concat([data_ordered.iloc[:,0], data_ordered.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')], axis=1)
 
+data_RSI = relative_strength_index(data2['Fermeture'])
 data_TI = get_technical_indicators(data2)
 data_with_TI = pd.concat([data2, data_TI], axis=1)
 
@@ -149,11 +228,12 @@ stationary_closed_price = make_stationary(y_train)
 #
 #closed_price_train = [x for x in stationary_closed_price]
 
-
-fit_arima(y_train)
+#Make an ARIMA prediction
+#fit_arima(y_train)
 
 #print(X_train.loc[:, X_train.isna().any()])
 #X_train.Cap = X_train.Cap.astype(np.float64)
 #vif = multicolinearity_check(X_train)
 #print(vif)
+
 
