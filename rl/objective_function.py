@@ -9,6 +9,7 @@ class SharpeRatio:
         self._run()
 
     def _run(self):
+        # Risk free rate = 0
         # Portfolio vector w (weight of each asset)
         # u = vector of expected returns
         # Σ = covariance. Σij the empirical covariance of the ith and the jth assets.
@@ -30,29 +31,17 @@ class SharpeRatio:
         position_diff.fillna(0, inplace=True)
         t=0
         log_return_grouped = []
-#        print(log_return)
         toto = {}
         self._sharpe_ratio = []
         while t < self._closing_price.size - 1:
-        #while t < 10:
+            log_return_grouped.append(log_return[t])
             if t == 0:
                 self._sharpe_ratio.append(0)
             else:
-                log_return_grouped.append(log_return[t-1])
-                log_return_grouped.append(log_return[t])
-                toto['Mean'] = pd.Series(log_return_grouped).mean()
-                toto['Std'] = pd.Series(log_return_grouped).std()
-                #print("Log return: ", log_return_grouped)
-                #print("Mean: ", pd.Series(log_return_grouped).mean())
-                #print("Std: ", pd.Series(log_return_grouped).std())
                 s_r = (pd.Series(log_return_grouped).mean() - (self._tc * abs(position_diff[t]))) / pd.Series(log_return_grouped).std()
-                toto['SR'] = s_r
                 self._sharpe_ratio.append(s_r)
-                log_return_grouped = []
-                print(toto)
 
             t = t + 1
-        #print(pd.Series(self._sharpe_ratio))
 
     def sharpe(self):
         return self._sharpe_ratio
