@@ -38,7 +38,7 @@ wr = ti.WilliamsRIndicator(data_processed['Haut'], data_processed['Bas'], data_p
 data_with_TI = pd.concat([data_processed, rsi, macd, bb, ma, wr], axis=1)
 
 # Check if evertything is good.
-print(data_with_TI.head())
+#print(data_with_TI.head())
 
 # Split train/test sets, without shuffle as it is a time serie.
 data_train, data_test = train_test_split(data_with_TI, test_size=0.2, shuffle=False)
@@ -51,11 +51,15 @@ y_test = data_test["Fermeture"]
 
 random = [randint(-1, 1) for iter in range(data_processed['Fermeture'].size)]
 position = pd.Series(random)
-sharpe_ratio = pd.Series(of.SharpeRatio(data_processed['Fermeture'], position).sharpe())
-#print(sharpe_ratio)
+#sharpe_ratio = pd.Series(of.SharpeRatio(data_processed['Fermeture'], position).sharpe())
+#sharpe_ratio_additive = pd.Series(of.SharpeRatioVariante(data_processed['Fermeture'], position).sharpe())
+#sharpe_ratio_differential = pd.Series(of.DifferentialSharpeRatio(data_processed['Fermeture'], position).sharpe())
+#print(sharpe_ratio_additive)
+
+selected_feature = data_processed[['Ouverture', 'Haut', 'Bas', 'Fermeture']]
 
 #plt.figure()
-#sharpe_ratio.plot()
+#sharpe_ratio_differential.plot()
 #plt.legend(['Sharpe ratio'])
 #plt.show()
 
