@@ -62,22 +62,26 @@ class SharpeRatioVariante:
         additive_return = self._closing_price.diff()
         additive_return.fillna(0, inplace=True)
         additive_return_grouped = []
-        r = []
-        self._sharpe_ratio = []
+        self._r = []
+        #self._sharpe_ratio = []
         while t < self._closing_price.size - 1:
             additive_return_grouped.append(additive_return[t])
             if t == 0:
-                self._sharpe_ratio.append(0)
-                r.append(0)
+                #self._sharpe_ratio.append(0)
+                self._r.append(0)
             else:
-                r.append(self._num_shares_traded * (self._position[t-1] * additive_return[t] - (self._tc * abs(position_diff[t]))))
-                s_r = pd.Series(r).mean() / pd.Series(r).std()
-                self._sharpe_ratio.append(s_r)
+                self._r.append(self._num_shares_traded * (self._position[t-1] * additive_return[t] - (self._tc * abs(position_diff[t]))))
+                #s_r = pd.Series(r).mean() / pd.Series(r).std()
+                #self._sharpe_ratio.append(s_r)
 
             t = t + 1
 
+        self._sharpe_ratio = pd.Series(self._r).mean() / pd.Series(self._r).std()
     def sharpe(self):
         return self._sharpe_ratio
+
+    def getReturns(self):
+        return pd.Series(self._r)
 
 
 class DifferentialSharpeRatio:

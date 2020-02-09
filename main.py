@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from random import randint
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
 #from statsmodels.regression.linear_model import OLS
 #from statsmodels.stats.outliers_influence import variance_inflation_factor
 #import category_encoders as ce
@@ -20,6 +21,7 @@ import techindic.indicator as ti
 import utils.stats as stats
 import econometric.utils as model
 import rl.objective_function as of
+import rl.policy as policy
 
 # Import data, replace unwanted coma for float numbers, and convert to numeric number
 #data = pd.read_csv("/home/kevin/DeepLearning/bitcoin.csv")
@@ -58,10 +60,54 @@ position = pd.Series(random)
 
 selected_feature = data_processed[['Ouverture', 'Haut', 'Bas', 'Fermeture']]
 
+epochs=500
+past_timesteps=5
+# nb features = all columns * (past_timesteps +1(because index start at 0))rows + Last_position
+nb_features = (past_timesteps + 1) * selected_feature.shape[1] + 1
+
+#Xavier initialization for tanh activation function
+xavier_weights=np.random.randn(nb_features,1)*np.sqrt(2/(nb_features+1))
+theta=xavier_weights.flatten()
+sharpes = np.zeros(epochs) # store sharpes over time
+learning_rate = 0.1
+
+scaler = MinMaxScaler()
+selected_feature_train, selected_feature_test = train_test_split(selected_feature, test_size=0.2, shuffle=False)
+selected_feature_train[['Ouverture', 'Haut', 'Bas', 'Fermeture']] = scaler.fit_transform(selected_feature_train)
+
+#for i in range(epochs):
+#    grad, sharpe = policy.DirectReinforcementLearning(selected_feature_train, past_timesteps, nb_features, theta).gradientAscent()
+#    theta = theta + grad * learning_rate
+#    print("epochs:{} -> Gradients are:{} - Params:{}".format(i, grad, theta))
+#    sharpes[i] = sharpe
+
+print("Training is over")
+
 #plt.figure()
-#sharpe_ratio_differential.plot()
+#pd.Series(sharpes).plot()
 #plt.legend(['Sharpe ratio'])
 #plt.show()
+
+theta = [-0.09447143, -0.89351186, -0.46627808, -0.39296656, -0.23362681, -0.1256187, -0.2016036, 0.73091367, 0.66111689, 0.78194012, -0.93662766, 0.33211321, 0.45503929, 0.44096926, -0.71194595, -0.02568273, 0.1628942, 0.16099525, -0.15224904, -0.09434521, -0.36466636, -0.44492595, -0.00667781, 0.727209, 0.13017647]
+
+selected_feature_test.reset_index(drop=True, inplace=True)
+
+positions = policy.DirectReinforcementLearning(selected_feature_test, past_timesteps, nb_features, theta).getPosition()
+test_returns = of.SharpeRatioVariante(selected_feature_test['Fermeture'], pd.Series(positions)).getReturns()
+
+print(positions)
+plt.figure()
+plt.plot((test_returns).cumsum(), label="Reinforcement Learning Model", linewidth=1)
+plt.plot((selected_feature_test['Fermeture'].diff()).cumsum(), label="Buy and Hold", linewidth=1)
+#plt.plot(pd.Series(positions), label="positions", linewidth=1)
+plt.plot(selected_feature_test['Fermeture'], label="closing price", linewidth=1)
+plt.xlabel('Ticks')
+plt.ylabel('Cumulative Returns');
+plt.legend()
+plt.title("RL Model vs. Buy and Hold - Test Data");
+plt.show()
+
+
 
 #Make an ARIMA prediction
 #arima = model.FitARIMA(y_train, y_test).get_arima_values()
