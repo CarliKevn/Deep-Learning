@@ -71,36 +71,43 @@ theta=xavier_weights.flatten()
 sharpes = np.zeros(epochs) # store sharpes over time
 learning_rate = 0.1
 
-scaler = MinMaxScaler()
+theta = np.ones(nb_features)
 selected_feature_train, selected_feature_test = train_test_split(selected_feature, test_size=0.2, shuffle=False)
-selected_feature_train[['Ouverture', 'Haut', 'Bas', 'Fermeture']] = scaler.fit_transform(selected_feature_train)
+scaler = MinMaxScaler()
+selected_feature[['Ouverture', 'Haut', 'Bas', 'Fermeture']] = scaler.fit_transform(selected_feature)
+selected_feature_train_scaled, selected_feature_test_scaled = train_test_split(selected_feature, test_size=0.2, shuffle=False)
 
-#for i in range(epochs):
-#    grad, sharpe = policy.DirectReinforcementLearning(selected_feature_train, past_timesteps, nb_features, theta).gradientAscent()
-#    theta = theta + grad * learning_rate
-#    print("epochs:{} -> Gradients are:{} - Params:{}".format(i, grad, theta))
-#    sharpes[i] = sharpe
+for i in range(epochs):
+    grad, sharpe, positions = policy.DirectReinforcementLearning(selected_feature_train_scaled, past_timesteps, nb_features, theta).gradientAscent()
+    theta = theta + grad * learning_rate
+    print("epochs:{} -> Gradients are:{} - Params:{}".format(i, grad, theta))
+    sharpes[i] = sharpe
 
 print("Training is over")
 
-#plt.figure()
-#pd.Series(sharpes).plot()
-#plt.legend(['Sharpe ratio'])
-#plt.show()
+plt.figure()
+pd.Series(sharpes).plot()
+plt.legend(['Sharpe ratio'])
+plt.show()
 
-theta = [-0.09447143, -0.89351186, -0.46627808, -0.39296656, -0.23362681, -0.1256187, -0.2016036, 0.73091367, 0.66111689, 0.78194012, -0.93662766, 0.33211321, 0.45503929, 0.44096926, -0.71194595, -0.02568273, 0.1628942, 0.16099525, -0.15224904, -0.09434521, -0.36466636, -0.44492595, -0.00667781, 0.727209, 0.13017647]
 
+#theta = [ 0.45651323, 0.67321937, 0.52488554, -0.38532925, 0.28668503, -0.53165017, 0.70014683, 0.45059688, 0.15833971, 0.57230807, 0.18633164, 0.29641081, 0.27475065, 0.80737708, 0.41908635, -0.37536087, -0.22922396, 0.30244082, 0.81199074, 0.36943586, 0.36066495, -0.43119286, 0.25645293, 0.32745025, 2.07420839]
+
+
+selected_feature_test_scaled.reset_index(drop=True, inplace=True)
 selected_feature_test.reset_index(drop=True, inplace=True)
 
-positions = policy.DirectReinforcementLearning(selected_feature_test, past_timesteps, nb_features, theta).getPosition()
-test_returns = of.SharpeRatioVariante(selected_feature_test['Fermeture'], pd.Series(positions)).getReturns()
+grad, sharpe, positions = policy.DirectReinforcementLearning(selected_feature_test, past_timesteps, nb_features, theta).gradientAscent()
+theta = theta + grad * learning_rate
+print(pd.Series(positions).round())
+test_returns = of.SharpeRatioVariante(selected_feature_test['Fermeture'], pd.Series(positions).round()).getReturns()
+print(test_returns)
 
-print(positions)
 plt.figure()
 plt.plot((test_returns).cumsum(), label="Reinforcement Learning Model", linewidth=1)
 plt.plot((selected_feature_test['Fermeture'].diff()).cumsum(), label="Buy and Hold", linewidth=1)
-#plt.plot(pd.Series(positions), label="positions", linewidth=1)
-plt.plot(selected_feature_test['Fermeture'], label="closing price", linewidth=1)
+plt.plot(selected_feature_test['Fermeture'], label="Closing Price", linewidth=1)
+plt.plot(pd.Series(positions).round() * 5000, label="positions", linewidth=1)
 plt.xlabel('Ticks')
 plt.ylabel('Cumulative Returns');
 plt.legend()

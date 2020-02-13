@@ -34,13 +34,10 @@ class DirectReinforcementLearning:
             #print("position:{}, dot:{}".format(self._position[t], np.dot(self._theta, self._input_feature)))
             t = t + 1
 
-    def getPosition(self):
-        return self._position
-
-
     def gradientAscent(self):
 
         sharpe_ratio = of.SharpeRatioVariante(self._feature_vector['Fermeture'], pd.Series(self._position)).sharpe()
+        #print("Sharpe:{}".format(sharpe_ratio))
 
         self._grad = np.zeros(self._nb_params)
         prevTheta = np.zeros(self._nb_params)
@@ -59,4 +56,4 @@ class DirectReinforcementLearning:
             t = t + 1
 
             #print("dRdF:{}, dRdFp:{}, dFdtheta:{}, dSdtheta:{}, self._grad:{}, prevTheta:{}".format(dRdF,dRdFp,dFdtheta, dSdtheta, self._grad, prevTheta))
-        return self._grad, sharpe_ratio
+        return self._grad, sharpe_ratio, self._position
