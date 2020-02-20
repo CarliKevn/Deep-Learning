@@ -25,12 +25,13 @@ import rl.objective_function as of
 import rl.policy as policy
 
 # Import data, replace unwanted coma for float numbers, and convert to numeric number
-#data = pd.read_csv("/home/kevin/DeepLearning/bitcoin.csv")
-data = pd.read_csv("./bitcoin.csv")
+#data = pd.read_csv("./bitcoin.csv")
+data = pd.read_csv("./sp500.csv")
 data.iloc[:, 1:].replace(',','', regex=True, inplace=True)
 data_ordered = data.iloc[::-1].reset_index(drop=True)
 data_processed = pd.concat([data_ordered.iloc[:,0], data_ordered.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')], axis=1)
 
+print(data_processed)
 # Add Technical Indicators as features
 rsi = ti.RSIInidcator(data_processed['Fermeture']).rsi()
 macd = ti.MACDIndicator(data_processed['Fermeture']).macd()
@@ -46,8 +47,8 @@ data_with_TI = pd.concat([data_processed, rsi, macd, bb, ma, wr], axis=1)
 # Split train/test sets, without shuffle as it is a time serie.
 data_train, data_test = train_test_split(data_with_TI, test_size=0.2, shuffle=False)
 # Feature
-X_train = data_train[['Ouverture', 'Haut', 'Bas', 'Cap', 'ma7', 'ma21', '26ema', '12ema', 'MACD', 'upper_band', 'lower_band', 'ema', 'wr']]
-X_test = data_test[['Ouverture', 'Haut', 'Bas', 'Cap', 'ma7', 'ma21', '26ema', '12ema', 'MACD', 'upper_band', 'lower_band', 'ema', 'wr']]
+X_train = data_train[['Ouverture', 'Haut', 'Bas', 'ma7', 'ma21', '26ema', '12ema', 'MACD', 'upper_band', 'lower_band', 'ema', 'wr']]
+X_test = data_test[['Ouverture', 'Haut', 'Bas', 'ma7', 'ma21', '26ema', '12ema', 'MACD', 'upper_band', 'lower_band', 'ema', 'wr']]
 # Target
 
 y_train = data_train["Fermeture"]
@@ -68,7 +69,7 @@ sharpes = np.zeros(epochs) # store sharpes over time
 #learning_rate = 0.1
 learning_rate = 0.01
 
-#theta = np.ones(nb_features)
+theta = np.ones(nb_features)
 selected_feature_train, selected_feature_test = train_test_split(selected_feature, test_size=0.2, shuffle=False)
 #scaler = MinMaxScaler()
 scaler = StandardScaler()
@@ -77,7 +78,7 @@ selected_feature[['Fermeture', 'MACD', 'ema', 'wr']] = scaler.fit_transform(sele
 selected_feature_train_scaled, selected_feature_test_scaled = train_test_split(selected_feature, test_size=0.2, shuffle=False)
 
 for i in range(epochs):
-    grad, sharpe, positions, returns = policy.DirectReinforcementLearning(selected_feature_train_scaled, past_timesteps, nb_features, theta).gradientAscent()
+    grad, sharpe, positions, returns = policy.DirectReinforcementLearning(selected_feature_train_scaled, past_timesteps, nb_features, theta).gradientAscent(diffSharpe=True)
     theta = theta + grad * learning_rate
     print("epochs:{} -> Gradients are:{} - Params:{}".format(i, grad, theta))
     print("Sharpe: {}".format(sharpe))
@@ -95,7 +96,7 @@ plt.show()
 selected_feature_test_scaled.reset_index(drop=True, inplace=True)
 selected_feature_test.reset_index(drop=True, inplace=True)
 
-grad, sharpe, positions, returns = policy.DirectReinforcementLearning(selected_feature_test_scaled, past_timesteps, nb_features, theta).gradientAscent()
+grad, sharpe, positions, returns = policy.DirectReinforcementLearning(selected_feature_test_scaled, past_timesteps, nb_features, theta).gradientAscent(diffSharpe=True)
 
 theta = theta + grad * learning_rate
 
