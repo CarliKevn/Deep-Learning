@@ -25,13 +25,12 @@ import rl.objective_function as of
 import rl.policy as policy
 
 # Import data, replace unwanted coma for float numbers, and convert to numeric number
-#data = pd.read_csv("./bitcoin.csv")
-data = pd.read_csv("./sp500.csv")
+data = pd.read_csv("./bitcoin.csv")
+#data = pd.read_csv("./sp500.csv")
 data.iloc[:, 1:].replace(',','', regex=True, inplace=True)
 data_ordered = data.iloc[::-1].reset_index(drop=True)
 data_processed = pd.concat([data_ordered.iloc[:,0], data_ordered.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')], axis=1)
 
-print(data_processed)
 # Add Technical Indicators as features
 rsi = ti.RSIInidcator(data_processed['Fermeture']).rsi()
 macd = ti.MACDIndicator(data_processed['Fermeture']).macd()
@@ -90,8 +89,6 @@ plt.figure()
 pd.Series(sharpes).plot()
 plt.legend(['Sharpe ratio'])
 plt.show()
-
-#theta = [-0.36585208, 0.36585425, -0.26544928, 0.29031994, -0.9596608, -0.29407214, -0.32061644]
 
 selected_feature_test_scaled.reset_index(drop=True, inplace=True)
 selected_feature_test.reset_index(drop=True, inplace=True)

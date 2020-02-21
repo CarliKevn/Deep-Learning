@@ -36,8 +36,8 @@ class DirectReinforcementLearning:
 
     def gradientAscent(self, diffSharpe=False, n=0.005):
 
-        profits, returns, sharpe_ratio = of.Returns(self._feature_vector['Fermeture'], pd.Series(self._position).round()).getAdditiveProfits()
-        #returns, sharpe_ratio = of.Returns(self._feature_vector['Fermeture'], pd.Series(self._position).round()).getLogReturns()
+       # profits, returns, sharpe_ratio = of.Returns(self._feature_vector['Fermeture'], pd.Series(self._position).round()).getAdditiveProfits()
+        profits, returns, sharpe_ratio = of.Returns(self._feature_vector['Fermeture'], pd.Series(self._position).round()).getLogReturns()
 
         self._grad = np.zeros(self._nb_params)
         prevTheta = np.zeros(self._nb_params)

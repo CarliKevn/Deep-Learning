@@ -8,7 +8,7 @@ import numpy as np
 # Positions are (-1,0,1) = long, neutral, short
 
 class Returns:
-    def __init__(self, closing_price: pd.Series, position, tc: float = 0.05, num_shares_traded: float = 1.0):
+    def __init__(self, closing_price: pd.Series, position, tc: float=0.05, num_shares_traded: float=1.0):
         self._closing_price = closing_price
         self._position = position
         self._num_shares_traded = num_shares_traded
@@ -16,16 +16,17 @@ class Returns:
 
     # Log returns
     def getLogReturns(self, sharpe=True):
-        log_return = np.log(1 + self._closing_price.pct_change())
+        #log_return = np.log(1 + self._closing_price.pct_change())
+        log_return = np.log(self._closing_price/self._closing_price.shift(1))
         log_return.fillna(0, inplace=True)
         T = len(log_return)
         log_returns_with_tc =  self._position[0:T - 1] * log_return[1:T] - self._tc * np.abs(self._position[1:T] - self._position[0:T - 1])
         log_gain = np.concatenate([[0], log_returns_with_tc])
         if(sharpe):
             sharpe_ratio = pd.Series(log_gain).mean() / pd.Series(log_gain).std()
-            return pd.Series(log_gain), sharpe_ratio
+            return pd.Series(log_return), pd.Series(log_gain), sharpe_ratio
         else:
-            return pd.Series(log_gain)
+            return pd.Series(log_return), pd.Series(log_gain)
 
     # Additive profits
     def getAdditiveProfits(self, sharpe=True):
@@ -49,7 +50,7 @@ class Returns:
         gain = np.concatenate([[0], initial_wealth * mul_profits_with_tc])
         if(sharpe):
             sharpe_ratio = pd.Series(gain).mean() / pd.Series(gain).std()
-            return pd.Series(gain), sharpe_ratio
+            return pd.Series(mul_profits), pd.Series(gain), sharpe_ratio
         else:
-            return pd.Series(gain)
+            return pd.Series(mul_profits), pd.Series(gain)
 
