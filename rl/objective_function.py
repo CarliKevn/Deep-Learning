@@ -8,7 +8,7 @@ import numpy as np
 # Positions are (-1,0,1) = long, neutral, short
 
 class Returns:
-    def __init__(self, closing_price: pd.Series, position, tc: float=0.05, num_shares_traded: float=1.0):
+    def __init__(self, closing_price: pd.Series, position, tc: float=0.5, num_shares_traded: float=1.0):
         self._closing_price = closing_price
         self._position = position
         self._num_shares_traded = num_shares_traded

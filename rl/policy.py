@@ -4,7 +4,7 @@ import pandas as pd
 import rl.objective_function as of
 
 class DirectReinforcementLearning:
-    def __init__(self, feature_vector: pd.DataFrame, window_length: int, nb_params: int, theta, tc: float = 0.05):
+    def __init__(self, feature_vector: pd.DataFrame, window_length: int, nb_params: int, theta, tc: float = 0.5):
         self._feature_vector = feature_vector
         self._window_length = window_length
         self._theta = theta
@@ -36,8 +36,8 @@ class DirectReinforcementLearning:
 
     def gradientAscent(self, diffSharpe=False, n=0.005):
 
-       # profits, returns, sharpe_ratio = of.Returns(self._feature_vector['Fermeture'], pd.Series(self._position).round()).getAdditiveProfits()
-        profits, returns, sharpe_ratio = of.Returns(self._feature_vector['Fermeture'], pd.Series(self._position).round()).getLogReturns()
+       # profits, returns, sharpe_ratio = of.Returns(self._feature_vector['Fermeture'], pd.Series(self._position).round(), self._tc).getAdditiveProfits()
+        profits, returns, sharpe_ratio = of.Returns(self._feature_vector['Fermeture'], pd.Series(self._position).round(), self._tc).getLogReturns()
 
         self._grad = np.zeros(self._nb_params)
         prevTheta = np.zeros(self._nb_params)
