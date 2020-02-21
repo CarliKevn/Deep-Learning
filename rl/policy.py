@@ -4,7 +4,7 @@ import pandas as pd
 import rl.objective_function as of
 
 class DirectReinforcementLearning:
-    def __init__(self, feature_vector: pd.DataFrame, window_length: int, nb_params: int, theta, tc: float = 0.5):
+    def __init__(self, feature_vector: pd.DataFrame, window_length: int, nb_params: int, theta, tc: float = 5.0):
         self._feature_vector = feature_vector
         self._window_length = window_length
         self._theta = theta
