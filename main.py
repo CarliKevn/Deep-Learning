@@ -39,7 +39,7 @@ data_with_TI = pd.concat([data_processed, rsi, macd, bb, ma, wr], axis=1)
 
 selected_feature = data_with_TI[['Fermeture', 'MACD', 'ema', 'wr']]
 
-epochs=5
+epochs=500
 past_timesteps=5
 # nb features = all columns * (past_timesteps +1(because index start at 0))rows + Last_position
 nb_features = (past_timesteps + 1) * selected_feature.shape[1] + 1
@@ -64,22 +64,24 @@ selected_feature[['Fermeture', 'MACD', 'ema', 'wr']] = scaler.fit_transform(sele
 #selected_feature[['Fermeture']] = scaler.fit_transform(selected_feature)
 selected_feature_train_scaled, selected_feature_test_scaled = train_test_split(selected_feature, test_size=0.2, shuffle=False)
 
-for i in range(epochs):
-    grad, sharpe, positions, returns = policy.DirectReinforcementLearning(selected_feature_train_scaled, past_timesteps, nb_features, theta).gradientAscent(diffSharpe=True)
-    theta = theta + grad * learning_rate
-    print("epochs:{} -> Gradients are:{} - Params:{}".format(i, grad, theta))
-    print("Sharpe: {}".format(sharpe))
-    sharpes[i] = sharpe
+#for i in range(epochs):
+#    grad, sharpe, positions, returns = policy.DirectReinforcementLearning(selected_feature_train_scaled, past_timesteps, nb_features, theta).gradientAscent(diffSharpe=True)
+#    theta = theta + grad * learning_rate
+#    print("epochs:{} -> Gradients are:{} - Params:{}".format(i, grad, theta))
+#    print("Sharpe: {}".format(sharpe))
+#    sharpes[i] = sharpe
 
 print("Training is over")
 
-plt.figure()
-pd.Series(sharpes).plot()
-plt.legend(['Sharpe ratio'])
-plt.show()
+#plt.figure()
+#pd.Series(sharpes).plot()
+#plt.legend(['Sharpe ratio'])
+#plt.show()
 
 selected_feature_test_scaled.reset_index(drop=True, inplace=True)
 selected_feature_test.reset_index(drop=True, inplace=True)
+
+theta = [1.0887944, 1.29024224, 1.08465309, 0.46488559, 1.07361585, 1.28331155, 1.0774547, 0.34942852, 1.06501943, 1.26556135, 1.06931918, -0.03408419, 1.07904374, 1.26251816, 1.07596523, 0.40762334, 1.14152445, 1.32025802, 1.1198716, 1.03194209, 1.23067978, 1.45206236, 1.19399704, 1.77119884, 1.36564803]
 
 add_arima = False
 if(add_arima):
@@ -99,11 +101,29 @@ grad, sharpe, positions, returns = policy.DirectReinforcementLearning(selected_f
 
 theta = theta + grad * learning_rate
 
+# For plotting the changing positions
+# Separate buy signals from sell signals
+changing_positions = (pd.Series(positions).round()).diff()
+changing_positions.fillna(0, inplace=True)
+xbuy = [i for i in range(len(changing_positions)) if changing_positions[i] > 0]
+xsell = [i for i in range(len(changing_positions)) if changing_positions[i] < 0]
+ybuy = []
+ysell = []
+for i in range(len(selected_feature_test_scaled['Fermeture'])):
+    for j in range(len(xbuy)):
+        if i == xbuy[j]:
+            ybuy.append(selected_feature_test_scaled['Fermeture'].iloc[i])
+
+    for k in range(len(xsell)):
+        if i == xsell[k]:
+            ysell.append(selected_feature_test_scaled['Fermeture'].iloc[i])
+
 plt.figure()
 plt.plot(pd.Series(returns).cumsum(), label="RLModel Add returns", linewidth=1)
 plt.plot((selected_feature_test_scaled['Fermeture'].diff()).cumsum(), label="Buy and Hold", linewidth=1)
 plt.plot(selected_feature_test_scaled['Fermeture'], label="Closing Price", linewidth=1)
-plt.plot(pd.Series(positions).round(), label="positions", linewidth=1)
+plt.scatter(xbuy, ybuy, s=70, c='red', label="Buy Signal")
+plt.scatter(xsell, ysell, s=70, c='blue', label="Sell Signal")
 plt.xlabel('Ticks')
 plt.ylabel('Cumulative Returns');
 plt.legend()
