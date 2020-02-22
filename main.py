@@ -73,8 +73,9 @@ sharpes = np.zeros(epochs)
 selected_feature_train, selected_feature_test = train_test_split(selected_feature, test_size=0.2, shuffle=False)
 # With Scaling
 scaler = StandardScaler() # Or scaler = MinMaxScaler()
-selected_feature[['Fermeture', 'MACD', 'ema', 'wr']] = scaler.fit_transform(selected_feature)
-selected_feature_train_scaled, selected_feature_test_scaled = train_test_split(selected_feature, test_size=0.2, shuffle=False)
+selected_feature_scaled = scaler.fit_transform(selected_feature)
+selected_feature_scaled = pd.DataFrame(selected_feature_scaled, columns=selected_feature.columns)
+selected_feature_train_scaled, selected_feature_test_scaled = train_test_split(selected_feature_scaled, test_size=0.2, shuffle=False)
 
 #for i in range(epochs):
 #    grad, sharpe, positions, returns = policy.DirectReinforcementLearning(selected_feature_train_scaled, past_timesteps, nb_features, theta).gradientAscent(diffSharpe=True)
