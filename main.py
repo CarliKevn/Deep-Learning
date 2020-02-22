@@ -17,6 +17,8 @@ import rl.objective_function as of
 import rl.policy as policy
 
 
+filename="./model_backups"
+
 # Parse arguments from command line
 parser = argparse.ArgumentParser(description='Reinforcement Learning Model.')
 parser.add_argument('-e', '--epochs', dest='epochs', type=int, default=500, help='The number of epochs to train the model')
@@ -67,7 +69,8 @@ nb_features = (past_timesteps + 1) * selected_feature.shape[1] + 1
 # Parameters initialization using Xavier initialization for tanh activation function
 # Or just using basic all ones initialization
 if args.weights_init == "Xavier":
-    xavier_weights=np.random.randn(nb_features,1)*np.sqrt(2/(nb_features+1))
+    # normal distribution with mean=0 and variance= sqrt(2/(fan-in+fan-out))
+    xavier_weights=np.random.normal(0, np.sqrt(2/(nb_features+1)), nb_features)
     theta=xavier_weights.flatten()
 elif args.weights_init == "Ones":
     theta = np.ones(nb_features)
@@ -93,6 +96,10 @@ for i in range(epochs):
     sharpes[i] = sharpe
 
 print("------- Training is over -------")
+with open(filename, 'a+') as f:
+    f.write("epochs:{} \nwindows:{} \nlearning_rate:{} \nobjective_function:{} \nweights_init_scheme:{} \ntheta:{}\n\n".format(epochs, past_timesteps, learning_rate, objective_function, args.weights_init, theta))
+    f.close()
+print("------- Model Hyperparameters and parameters saved -------")
 
 # Display sharpe ratio improvements over epochs
 if verbose:
