@@ -15,7 +15,7 @@ import utils.stats as stats
 import econometric.utils as model
 import rl.objective_function as of
 import rl.policy as policy
-
+import net.variational_autoencoder as vae
 
 filename="./model_backups"
 
@@ -85,6 +85,8 @@ scaler = StandardScaler() # Or scaler = MinMaxScaler()
 selected_feature_scaled = scaler.fit_transform(selected_feature)
 selected_feature_scaled = pd.DataFrame(selected_feature_scaled, columns=selected_feature.columns)
 selected_feature_train_scaled, selected_feature_test_scaled = train_test_split(selected_feature_scaled, test_size=0.2, shuffle=False)
+
+vae.VariationalAutoencoder(selected_feature_train_scaled, selected_feature_test_scaled)
 
 # Train the model
 for i in range(epochs):
@@ -167,7 +169,3 @@ plt.ylabel('Cumulative Returns');
 plt.legend()
 plt.title("RL Model vs. Buy and Hold - Test Data");
 plt.show()
-
-
-
-
