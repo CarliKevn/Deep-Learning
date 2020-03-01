@@ -60,7 +60,7 @@ data_with_TI = pd.concat([data_processed, rsi, macd, bb, ma, wr], axis=1)
 # Available Features
 # [['Ouverture', 'Haut', 'Bas', 'ma7', 'ma21', '26ema', '12ema', 'MACD', 'upper_band', 'lower_band', 'ema', 'wr']]
 
-selected_feature = data_with_TI[['Fermeture', 'MACD', 'ema', 'wr']]
+selected_feature = data_with_TI[['Fermeture', 'MACD', 'ema']]
 
 # Numbers of selected features * (past_timesteps + 1 (because index start at 0)) + 1=Last_position
 nb_features = (past_timesteps + 1) * selected_feature.shape[1] + 1
@@ -86,7 +86,7 @@ selected_feature_scaled = scaler.fit_transform(selected_feature)
 selected_feature_scaled = pd.DataFrame(selected_feature_scaled, columns=selected_feature.columns)
 selected_feature_train_scaled, selected_feature_test_scaled = train_test_split(selected_feature_scaled, test_size=0.2, shuffle=False)
 
-vae.VariationalAutoencoder(selected_feature_train_scaled, selected_feature_test_scaled)
+#vae_data = vae.VariationalAutoencoder(selected_feature_train_scaled, selected_feature_test_scaled).generate()
 
 # Train the model
 for i in range(epochs):

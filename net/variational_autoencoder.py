@@ -8,6 +8,7 @@ from keras.losses import mse, binary_crossentropy
 from keras import backend as K
 
 import numpy as np
+import pandas as pd
 
 # Taken from Keras offical example of a variatonal encoder
 class VariationalAutoencoder:
@@ -75,6 +76,12 @@ class VariationalAutoencoder:
         self._vae = Model(self._inputs, self._outputs, name='vae_mlp')
 
 
+    def generate(self):
+        z_mean, _, _ = self._encoder.predict(self._x_train, batch_size=self._batch_size)
+        vae_data = self._decoder.predict(z_mean)
+        vae_selected_feature = pd.DataFrame({'Fermeture': vae_data[:, 0], 'MACD': vae_data[:, 1], 'ema': vae_data[:, 2], 'wr': vae_data[:, 3]})
+        return vae_selected_feature
+
     def _train(self):
         self._buildModel()
         models = (self._encoder, self._decoder)
@@ -102,7 +109,9 @@ class VariationalAutoencoder:
             self._vae.fit(self._x_train,
                     epochs=self._epochs,
                     batch_size=self._batch_size,
-                    validation_data=(self._x_test, None)
+                    validation_data=(self._x_test, None),
                     shuffle=False)
 
             self._vae.save_weights('vae_features.h5')
+
+
