@@ -15,9 +15,10 @@ import utils.stats as stats
 import econometric.utils as model
 import rl.objective_function as of
 import rl.policy as policy
-import net.variational_autoencoder as vae
+#import net.variational_autoencoder as vae
 
 filename="./model_backups"
+stockfile="./btc_year_summary.csv"
 
 # Parse arguments from command line
 parser = argparse.ArgumentParser(description='Reinforcement Learning Model.')
@@ -42,11 +43,17 @@ objective_function = args.objective_function
 print("Chosen hyperparameters: epochs:{}, windows:{}, learning rate:{}, objective function:{}, weights init scheme:{}, verbose:{}".format(epochs, past_timesteps, learning_rate, objective_function, args.weights_init, verbose))
 
 # Import data, replace unwanted coma for float numbers, and convert to numeric number
-data = pd.read_csv("./bitcoin.csv")
-#data = pd.read_csv("./sp500.csv")
-data.iloc[:, 1:].replace(',','', regex=True, inplace=True)
-data_ordered = data.iloc[::-1].reset_index(drop=True)
-data_processed = pd.concat([data_ordered.iloc[:,0], data_ordered.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')], axis=1)
+data = pd.read_csv(stockfile)
+
+# No need for the new dataset
+#data.iloc[:, 1:].replace(',','', regex=True, inplace=True)
+#data_ordered = data.iloc[::-1].reset_index(drop=True)
+#data_processed = pd.concat([data_ordered.iloc[:,0], data_ordered.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')], axis=1)
+
+# So we need this in ordrer to keep the next lines unchanged
+data_processed = data
+
+print(data.head())
 
 # Add Technical Indicators as features
 rsi = ti.RSIInidcator(data_processed['Fermeture']).rsi()
@@ -60,7 +67,7 @@ data_with_TI = pd.concat([data_processed, rsi, macd, bb, ma, wr], axis=1)
 # Available Features
 # [['Ouverture', 'Haut', 'Bas', 'ma7', 'ma21', '26ema', '12ema', 'MACD', 'upper_band', 'lower_band', 'ema', 'wr']]
 
-selected_feature = data_with_TI[['Fermeture', 'MACD', 'ema']]
+selected_feature = data_with_TI[['Fermeture', 'Ouverture', 'VWP', 'MACD', 'ema', 'wr']]
 
 # Numbers of selected features * (past_timesteps + 1 (because index start at 0)) + 1=Last_position
 nb_features = (past_timesteps + 1) * selected_feature.shape[1] + 1
