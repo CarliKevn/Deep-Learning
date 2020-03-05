@@ -18,7 +18,8 @@ import rl.policy as policy
 #import net.variational_autoencoder as vae
 
 filename="./model_backups"
-stockfile="./btc_year_summary.csv"
+#stockfile="./btc_year_summary.csv"
+stockfile="./bitcoin.csv"
 
 # Parse arguments from command line
 parser = argparse.ArgumentParser(description='Reinforcement Learning Model.')
@@ -46,12 +47,12 @@ print("Chosen hyperparameters: epochs:{}, windows:{}, learning rate:{}, objectiv
 data = pd.read_csv(stockfile)
 
 # No need for the new dataset
-#data.iloc[:, 1:].replace(',','', regex=True, inplace=True)
-#data_ordered = data.iloc[::-1].reset_index(drop=True)
-#data_processed = pd.concat([data_ordered.iloc[:,0], data_ordered.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')], axis=1)
+data.iloc[:, 1:].replace(',','', regex=True, inplace=True)
+data_ordered = data.iloc[::-1].reset_index(drop=True)
+data_processed = pd.concat([data_ordered.iloc[:,0], data_ordered.iloc[:, 1:].apply(pd.to_numeric, errors='coerce')], axis=1)
 
 # So we need this in ordrer to keep the next lines unchanged
-data_processed = data
+#data_processed = data
 
 print(data.head())
 
@@ -67,7 +68,8 @@ data_with_TI = pd.concat([data_processed, rsi, macd, bb, ma, wr], axis=1)
 # Available Features
 # [['Ouverture', 'Haut', 'Bas', 'ma7', 'ma21', '26ema', '12ema', 'MACD', 'upper_band', 'lower_band', 'ema', 'wr']]
 
-selected_feature = data_with_TI[['Fermeture', 'Ouverture', 'VWP', 'MACD', 'ema', 'wr']]
+#selected_feature = data_with_TI[['Fermeture', 'Ouverture', 'VWP', 'MACD', 'ema', 'wr']]
+selected_feature = data_with_TI[['Fermeture', 'Ouverture','MACD', 'ema', 'wr']]
 
 # Numbers of selected features * (past_timesteps + 1 (because index start at 0)) + 1=Last_position
 nb_features = (past_timesteps + 1) * selected_feature.shape[1] + 1
@@ -116,7 +118,10 @@ if verbose:
     pd.Series(sharpes).plot()
     plt.legend(['Sharpe ratio'])
     plt.show()
-
+'''
+# parameters weight after 500 epochs for btc/usd min. VERY SUCCESSFULL
+theta = [1.14979244, 1.15079199, 1.1502789, 0.80698264, 1.15029399, 0.33909104, 1.14928899, 1.14973558, 1.14949215, 0.76181637, 1.14962482, 0.29303071, 1.14896727, 1.1492582, 1.14909631, 0.72275713, 1.14918728, 0.28653372, 1.14881231, 1.14896827, 1.14888284, 0.69221627, 1.14893813, 0.30126941, 1.14928387, 1.14895654, 1.14912066, 0.68105205, 1.14916945, 0.37206205, 1.14969238, 1.14940828, 1.14954657, 0.68395287, 1.1495189, 0.49042269, 1.45383504]
+'''
 
 # Adjust indexes for the test set
 selected_feature_test_scaled.reset_index(drop=True, inplace=True)
@@ -144,6 +149,9 @@ if(add_arima):
 # Run the model with the found parameters, on the test set
 grad, sharpe, positions, returns = policy.DirectReinforcementLearning(selected_feature_test_scaled, past_timesteps, nb_features, theta).gradientAscent(objective_function)
 
+# Get profits to estimate wealth
+add_profits, add_returns, _= of.Returns(selected_feature_test_scaled['Fermeture'], pd.Series(positions).round(), 0.025).getAdditiveProfits()
+
 # Actualise parameters
 theta = theta + grad * learning_rate
 
@@ -166,11 +174,11 @@ for i in range(len(selected_feature_test_scaled['Fermeture'])):
 
 # Plot the results
 plt.figure()
-plt.plot(pd.Series(returns).cumsum(), label="RLModel Add returns", linewidth=1)
+plt.plot(pd.Series(add_returns).cumsum(), label="RLModel Add returns", linewidth=1)
 plt.plot((selected_feature_test_scaled['Fermeture'].diff()).cumsum(), label="Buy and Hold", linewidth=1)
 plt.plot(selected_feature_test_scaled['Fermeture'], label="Closing Price", linewidth=1)
-plt.scatter(xbuy, ybuy, s=70, c='red', label="Buy Signal")
-plt.scatter(xsell, ysell, s=70, c='blue', label="Sell Signal")
+plt.scatter(xbuy, ybuy, s=7, c='red', label="Buy Signal")
+plt.scatter(xsell, ysell, s=7, c='blue', label="Sell Signal")
 plt.xlabel('Ticks')
 plt.ylabel('Cumulative Returns');
 plt.legend()
